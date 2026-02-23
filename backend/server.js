@@ -57,6 +57,7 @@ const syncReferrals = async () => {
 // Middleware
 const allowedOrigins = [
     'https://dhanki.vercel.app',
+    'https://dhanik.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
 ];
