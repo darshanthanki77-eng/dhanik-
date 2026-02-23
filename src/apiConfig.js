@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.MODE === 'production'
+const API_BASE_URL = process.env.NODE_ENV === 'production'
     ? '' // In production, same domain /api/...
     : 'http://localhost:5001';
 
