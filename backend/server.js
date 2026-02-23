@@ -95,6 +95,18 @@ app.get('/', (req, res) => {
     res.send('DHANKI API is running...');
 });
 
+// Debug health check endpoint
+app.get('/api/health', (req, res) => {
+    const mongoose = require('mongoose');
+    res.json({
+        status: 'ok',
+        mongo_uri_set: !!process.env.MONGO_URI,
+        jwt_secret_set: !!process.env.JWT_SECRET,
+        db_state: mongoose.connection.readyState, // 0=disconnected,1=connected,2=connecting
+        env: process.env.NODE_ENV || 'not set'
+    });
+});
+
 // Initialize Database and Migrations
 const initApp = async () => {
     try {
