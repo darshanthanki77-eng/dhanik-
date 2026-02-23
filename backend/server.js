@@ -109,12 +109,18 @@ const startServer = async () => {
 
         await syncReferrals();
 
-        const PORT = process.env.PORT || 5001;
-        app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+        if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+            const PORT = process.env.PORT || 5001;
+            app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+        }
     } catch (err) {
         console.error('Failed to start server:', err);
-        process.exit(1);
     }
 };
 
-startServer();
+// Start the server if not imported (standard node execution)
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;
