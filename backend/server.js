@@ -1,0 +1,120 @@
+require('dotenv').config({ path: './backend/.env' });
+const express = require('express');
+const cors = require('cors');
+const connectDB = require('./config/db');
+const User = require('./models/User');
+
+const app = express();
+
+const syncReferrals = async () => {
+    try {
+        console.log('🔄 Syncing referral data...');
+        const allUsers = await User.find({});
+
+        // Reset all referral arrays first to ensure clean state
+        await User.updateMany({}, {
+            $set: {
+                'referrals.level1': [],
+                'referrals.level2': [],
+                'referrals.level3': []
+            }
+        });
+
+        for (const user of allUsers) {
+            if (user.referredBy) {
+                const cleanRefL1 = user.referredBy.trim();
+                const sponsorL1 = await User.findOne({ referralId: cleanRefL1 });
+                if (sponsorL1) {
+                    sponsorL1.referrals.level1.push(user._id);
+                    await sponsorL1.save();
+
+                    if (sponsorL1.referredBy) {
+                        const cleanRefL2 = sponsorL1.referredBy.trim();
+                        const sponsorL2 = await User.findOne({ referralId: cleanRefL2 });
+                        if (sponsorL2) {
+                            sponsorL2.referrals.level2.push(user._id);
+                            await sponsorL2.save();
+
+                            if (sponsorL2.referredBy) {
+                                const cleanRefL3 = sponsorL2.referredBy.trim();
+                                const sponsorL3 = await User.findOne({ referralId: cleanRefL3 });
+                                if (sponsorL3) {
+                                    sponsorL3.referrals.level3.push(user._id);
+                                    await sponsorL3.save();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        console.log('✅ Referral data synced successfully');
+    } catch (err) {
+        console.error('Sync error:', err);
+    }
+};
+
+// Middleware
+const allowedOrigins = [
+    'https://dhanki.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS blocked for origin: ${origin}`));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.options('*', cors());
+app.use(express.json());
+
+// Serve uploaded proof screenshots
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/token', require('./routes/tokenRoutes'));
+app.use('/api/referral', require('./routes/referralRoutes'));
+app.use('/api/profile', require('./routes/profileRoutes'));
+app.use('/api/support', require('./routes/supportRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+
+app.get('/', (req, res) => {
+    res.send('DHANKI API is running...');
+});
+
+const startServer = async () => {
+    try {
+        // Connect to Database
+        await connectDB();
+
+        // Run migrations after connection
+        const adminEmails = ['admin1@gmail.com', 'admin@gmail.com'];
+        await User.updateMany(
+            { email: { $in: adminEmails } },
+            { $set: { isAdmin: 1 } }
+        );
+        console.log('✅ Registered admins promoted successfully');
+
+        await syncReferrals();
+
+        const PORT = process.env.PORT || 5001;
+        app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+    } catch (err) {
+        console.error('Failed to start server:', err);
+        process.exit(1);
+    }
+};
+
+startServer();
