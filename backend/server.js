@@ -1,4 +1,4 @@
-require('dotenv').config({ path: './backend/.env' });
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -94,33 +94,29 @@ app.get('/', (req, res) => {
     res.send('DHANKI API is running...');
 });
 
-const startServer = async () => {
+// Initialize Database and Migrations
+const initApp = async () => {
     try {
-        // Connect to Database
         await connectDB();
-
-        // Run migrations after connection
         const adminEmails = ['admin1@gmail.com', 'admin@gmail.com'];
         await User.updateMany(
             { email: { $in: adminEmails } },
             { $set: { isAdmin: 1 } }
         );
         console.log('✅ Registered admins promoted successfully');
-
         await syncReferrals();
-
-        if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-            const PORT = process.env.PORT || 5001;
-            app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
-        }
     } catch (err) {
-        console.error('Failed to start server:', err);
+        console.error('Initialization error:', err);
     }
 };
 
+// Run initialization
+initApp();
+
 // Start the server if not imported (standard node execution)
 if (require.main === module) {
-    startServer();
+    const PORT = process.env.PORT || 5001;
+    app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
 }
 
 module.exports = app;
