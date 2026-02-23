@@ -29,6 +29,7 @@ import Support from './Support';
 import ReferralNetwork from './ReferralNetwork';
 import Profile from './Profile';
 import { BrowserProvider } from 'ethers';
+import API_BASE_URL from '../apiConfig';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -110,7 +111,7 @@ const Dashboard = () => {
                     return;
                 }
 
-                const response = await fetch('http://localhost:5001/api/profile', {
+                const response = await fetch(`${API_BASE_URL}/api/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

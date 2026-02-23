@@ -10,6 +10,8 @@ import {
     Activity,
     Wallet
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../apiConfig';
 import './BuyToken.css';
 
 const BuyToken = () => {
@@ -46,7 +48,7 @@ const BuyToken = () => {
 
     const fetchPlatformSettings = async () => {
         try {
-            const res = await fetch('http://localhost:5001/api/token/settings');
+            const res = await fetch(`${API_BASE_URL}/api/token/settings`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.dhankiPrice) setTokenPrice(data.dhankiPrice);
@@ -62,7 +64,7 @@ const BuyToken = () => {
     const fetchHistory = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5001/api/token/history', {
+            const res = await fetch(`${API_BASE_URL}/api/token/history`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -98,7 +100,7 @@ const BuyToken = () => {
             formData.append('txHash', txId);
             formData.append('paymentScreenshot', screenshot);
 
-            const response = await fetch('http://localhost:5001/api/token/purchase', {
+            const response = await fetch(`${API_BASE_URL}/api/token/purchase`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
